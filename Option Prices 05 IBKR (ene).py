@@ -1,36 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
-
-
-def black_scholes_call(S, K, T, r, sigma):
-    d1 = (np.log(S/K) + (r + sigma**2 / 2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    C = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-    return C
-
-def black_scholes_put(S, K, T, r, sigma):
-    
-    d1 = (np.log(S / K) + (r + sigma ** 2 / 2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - (sigma * np.sqrt(T))
-    P = K * np.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
-
-    return P
-
-from scipy.stats import norm
-
-S = 100
-K = 110
-T = 1.5
-r = 0.03
-sigma = 0.2
-
-call_price = black_scholes_call(S, K, T, r, sigma)
-put_price = black_scholes_put(S, K, T, r, sigma)
-
-print("Call Price: ", call_price)
-print("Put Price: ", put_price)
-
-
 import yfinance as yf
 import arch
 
@@ -53,39 +20,6 @@ from datetime import datetime, timedelta
 import random
 import threading
 import time
-
-# class IBapi(EWrapper, EClient):
-#     def __init__(self):
-#         EClient.__init__(self, self)
-
-#     def stop(self):
-#         # Disconnecting the client
-#         self.disconnect()
-
-# def run_loop():
-#     app.run()
-
-# app = IBapi()
-# app.connect('127.0.0.1', 4002, clientId=client_id)
-
-# # Start the loop in a new thread
-# api_thread = threading.Thread(target=run_loop, daemon=True)
-# api_thread.start()
-
-# print("The main thread remains interactive.")
-
-# Example: Disconnecting after some time
-# import time
-# time.sleep(10)  # or however long you want the event loop to run
-# app.stop()  # This will stop the event loop
-
-'''
-#Uncomment this section if unable to connect
-#and to prevent errors on a reconnect
-import time
-time.sleep(2)
-app.disconnect()
-'''
 
 def generate_client_id():
     return random.randint(10000000, 99999999)
