@@ -24,6 +24,55 @@ import time
 def generate_client_id():
     return random.randint(10000000, 99999999)
 
+# Call related to financial statement information
+client_id = generate_client_id()
+
+class OptionDataWrapper(EWrapper, EClient):
+    def __init__(self):
+        EClient.__init__(self, self)
+        self.fundamental_data_received = False
+        self.fundamental_data = None
+        
+    def connectionClosed(self):
+        print("Connection closed.")
+        
+    def fundamentalData(self, reqId: int, data: str):
+        print("Received Fundamental Data: ", data)
+        self.fundamental_data = data
+        self.fundamental_data_received = True
+
+
+def main():
+
+    global app
+    global global_df  # Declare the global variable to update it from within the thread
+
+    # Setup the connection
+    app = OptionDataWrapper()
+    app.connect("127.0.0.1", 4002, clientId=client_id)
+    
+    contract = Contract()
+    contract.symbol = "AAPL"
+    contract.secType = "STK"
+    contract.exchange = "SMART"
+    contract.currency = "USD"
+    
+    app.reqFundamentalData(1, contract, "ReportsFinStatements", [])
+    
+    while not app.fundamental_data_received:
+        app.runOnce()
+
+    # Update the global variable with the populated dataframe
+    global_df = app.df
+
+    app.disconnect()
+    
+
+if __name__ == "__main__":
+    main()
+
+
+# Call related to options
 client_id = generate_client_id()
 
 class OptionDataWrapper(EWrapper, EClient):
