@@ -149,6 +149,8 @@ with open(output_file_path, 'w', newline='') as csvfile:
 ###################
 
 from itertools import product
+from PIL import Image
+
 # Path to Tesseract-OCR
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Update with your path
 
@@ -163,13 +165,14 @@ def pdf_to_text_with_structure(pdf_path, headers):
     """
     try:
         # Convert PDF to images
+        Image.MAX_IMAGE_PIXELS = 500000000
         images = convert_from_path(pdf_path, 500)  # 500 dpi to improve OCR quality
         
         # Data placeholder
         all_columns_data = {header: [] for header in headers}
         
         # Define a vertical range for header detection
-        y_range = 10  # Modify as needed
+        y_range = 2  # Modify as needed
         
         # Iterate through each image
         for img in images:
@@ -201,30 +204,52 @@ def pdf_to_text_with_structure(pdf_path, headers):
                     if header_indices:
                         column_positions[header] = data['left'][header_indices[0]]
             
-            columns_data = {header: [] for header in headers}
-            
-            sorted_headers = sorted(column_positions.items(), key=lambda x: x[1])  # Sort headers by their x-coordinate
-            for i, word in enumerate(data['text']):
-                word_x = data['left'][i]
-                for j, (header, x_pos) in enumerate(sorted_headers):
-                    # Check if it's the last header
-                    if j == len(sorted_headers) - 1:
-                        if word_x >= x_pos:
-                            columns_data[header].append(word)
-                    else:
-                        # If word's x is between current header's x and the next header's x
-                        if x_pos <= word_x < sorted_headers[j+1][1]:
-                            columns_data[header].append(word)
-            
+            # Exclude words above the header line
+            header_y_position = 787
+            valid_indices = [i for i, y in enumerate(data['top']) if y > header_y_position-y_range]
+
+            # Step 1: Using the sorted headers by their x-coordinates.
+            sorted_headers = sorted(column_positions.items(), key=lambda x: x[1])
+
+            # Step 2: Group words by their y-coordinate to form rows.
+            grouped_by_y = {}
+            for i in valid_indices:
+                y = data['top'][i]
+                found_group = False
+                for existing_y in grouped_by_y.keys():
+                    if abs(existing_y - y) <= y_range:
+                        grouped_by_y[existing_y].append(i)
+                        found_group = True
+                        break
+
+                if not found_group:
+                    grouped_by_y[y] = [i]
+                    
+            rows_data = []
+            for y, indices in grouped_by_y.items():
+                row_data = {}
+                for index in indices:
+                    word = data['text'][index]
+                    word_x = data['left'][index]
+                    for j, (header, x_pos) in enumerate(sorted_headers):
+                        if j == len(sorted_headers) - 1:
+                            if word_x >= x_pos:
+                                row_data[header] = word
+                        else:
+                            if x_pos <= word_x < sorted_headers[j+1][1]:
+                                row_data[header] = word
+                rows_data.append(row_data)
+
             # Append this image's data to the overall data
+            for row in rows_data:
+                for header in headers:
+                    all_columns_data[header].append(row.get(header, None))
+
+            # Handle empty cells
+            max_len = max(len(col) for col in all_columns_data.values())
             for header in headers:
-                all_columns_data[header].extend(columns_data[header])
-        
-        # Handle empty cells
-        max_len = max(len(col) for col in all_columns_data.values())
-        for header in headers:
-            while len(all_columns_data[header]) < max_len:
-                all_columns_data[header].append(None)
+                while len(all_columns_data[header]) < max_len:
+                    all_columns_data[header].append(None)
         
         # Convert to DataFrame
         df = pd.DataFrame(all_columns_data)
@@ -234,40 +259,23 @@ def pdf_to_text_with_structure(pdf_path, headers):
         return
     
 
-def batch_pdf_to_text(pdf_folder_path):
-    """
-    Process all PDFs in a folder and store OCR text in a DataFrame.
-
-    Parameters:
-    - pdf_folder_path: str, path to the folder containing pdf files.
-
-    Returns:
-    - df: DataFrame, contains filenames and their corresponding extracted text.
-    """
-    # Validate folder path
-    if not os.path.exists(pdf_folder_path):
-        raise FileNotFoundError(f"{pdf_folder_path} not found.")
-
-    # Get all pdf files in folder
-    pdf_files = [f for f in os.listdir(pdf_folder_path) if f.endswith(".pdf")]
-
-    # Processing all PDFs and store the results
-    data = {
-        'filename': [],
-        'text': []
-    }
-
-    for pdf_file in pdf_files:
-        pdf_path = os.path.join(pdf_folder_path, pdf_file)
-        text = pdf_to_text(pdf_path)
-        if text is not None:
-            data['filename'].append(pdf_file)
-            data['text'].append(text)
-
-    df = pd.DataFrame(data)
-    return df
-
 # Example usage
 pdf_folder_path = 'T:/Projects/_Transer/Pitchbook 2023/Pitchbook Project/Test' # Update with your path
-headers = ["Header1", "Header2", "Header3", ...]
-df = batch_pdf_to_text(pdf_folder_path)
+pdf_path = 'T:/Projects/_Transer/Pitchbook 2023/Pitchbook Project/Test/1531.pdf'
+headers = ["#","Companies", "Ownership", "Description","Deal Type","Deal Type 2","Deal Date","Pre-money Valuation","Raised to Date","Deal Size","Revenue","Employees","Investors","Lead/Sole Investors","HQ Location","Financing Status","Business Status","Primary Industry","Verticals","Deal Status","Company Website"]
+
+df = pdf_to_text_with_structure(pdf_path,headers)
+
+# Specify your desired file path
+output_file_path = 'T:/Projects/_Transer/Pitchbook 2023/Pitchbook Project/Test/ocr_results.csv'
+
+# Write the DataFrame to a CSV
+df.to_csv(output_file_path, index=False)
+
+# Set the display options
+pd.set_option('display.max_columns', None)  # Display all columns
+pd.set_option('display.max_rows', None)     # Display all rows
+pd.set_option('display.width', None)        # Ensure that the entire width of columns is displayed
+pd.set_option('display.max_colwidth', -1)   # Display complete content in each cell
+
+print(df)
