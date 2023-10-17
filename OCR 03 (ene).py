@@ -203,10 +203,18 @@ def pdf_to_text_with_structure(pdf_path, headers):
             
             columns_data = {header: [] for header in headers}
             
+            sorted_headers = sorted(column_positions.items(), key=lambda x: x[1])  # Sort headers by their x-coordinate
             for i, word in enumerate(data['text']):
-                for header in headers:
-                    if data['left'][i] == column_positions.get(header, None):
-                        columns_data[header].append(word)
+                word_x = data['left'][i]
+                for j, (header, x_pos) in enumerate(sorted_headers):
+                    # Check if it's the last header
+                    if j == len(sorted_headers) - 1:
+                        if word_x >= x_pos:
+                            columns_data[header].append(word)
+                    else:
+                        # If word's x is between current header's x and the next header's x
+                        if x_pos <= word_x < sorted_headers[j+1][1]:
+                            columns_data[header].append(word)
             
             # Append this image's data to the overall data
             for header in headers:
