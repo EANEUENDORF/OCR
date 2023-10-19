@@ -234,11 +234,15 @@ def pdf_to_text_with_structure(pdf_path, headers):
             # DEBUG: Print column positions
             print(f"Column Positions: {column_positions}")
 
-            # Exclude words above the header line
+            # Find the x-coordinate of the first header
+            first_header_x_position = min(column_positions.values())
+            # Exclude words above the header line and to the left of the first header
             header_y_position = 787
-            valid_indices = [i for i, y in enumerate(data['top']) if y > header_y_position-1]
+            valid_indices = [
+                i for i in range(len(data['text'])) 
+                if data['top'][i] >= header_y_position-1 and data['left'][i] >= first_header_x_position-1
+            ]
             valid_indices = sorted(valid_indices, key=lambda i: (data['left'][i], data['top'][i]))
-
 
             # Step 1: Using the sorted headers by their x-coordinates.
             sorted_headers = sorted(column_positions.items(), key=lambda x: x[1])
@@ -246,7 +250,7 @@ def pdf_to_text_with_structure(pdf_path, headers):
             print(f"Sorted Headers: {sorted_headers}")
 
             # Step 2: Group words by their y-coordinate to form rows.
-            y_range2 = 22
+            y_range2 = 11
             y_range3 = 22 
             grouped_by_y = {}
             for i in valid_indices:
