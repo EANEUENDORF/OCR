@@ -1,5 +1,8 @@
 
 
+headers = ["#","Companies", "Ownership Status", "Description","Deal Type","Deal Type 2","Date","Pre-money Valuation","Raised to Date","Size","Revenue","Employees","Investors","Lead/Sole Investors","HQ Location","Financing Status","Business Status","Primary Industry Code","Verticals","Deal Status","Company Website"]
+
+
 def pdf_to_text_with_structure(pdf_path, headers):
     """
     Convert pdf file to a DataFrame using OCR and positional data.
