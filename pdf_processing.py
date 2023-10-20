@@ -1,7 +1,17 @@
 
+import os
+import pytesseract
+import pandas as pd
+from pdf2image import convert_from_path
+import csv
+
+from itertools import product
+from PIL import Image
+
+# Path to Tesseract-OCR
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Update with your path
 
 headers = ["#","Companies", "Ownership Status", "Description","Deal Type","Deal Type 2","Date","Pre-money Valuation","Raised to Date","Size","Revenue","Employees","Investors","Lead/Sole Investors","HQ Location","Financing Status","Business Status","Primary Industry Code","Verticals","Deal Status","Company Website"]
-
 
 def pdf_to_text_with_structure(pdf_path, headers):
     """

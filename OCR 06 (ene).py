@@ -4,7 +4,7 @@ import pandas as pd
 from pdf2image import convert_from_path
 import csv
 from multiprocessing import Pool, cpu_count
-from pdf_processing import pdf_to_text_with_structure
+from pdf_processing import headers, pdf_to_text_with_structure
 
 ###################
 
@@ -52,10 +52,13 @@ def process_folder(pdf_folder_path, headers, output_file_path):
     # Get all PDF files in the folder
     pdf_files = [os.path.join(pdf_folder_path, file) for file in os.listdir(pdf_folder_path) if file.endswith('.pdf')]
 
+    # Create a list of tuples, where each tuple is (pdf_file, headers)
+    args_list = [(pdf_file, headers) for pdf_file in pdf_files]
+
     # Use a process pool to parallelize the work, using one core less than available
     num_processes = max(1, cpu_count() - 1)
     with Pool(num_processes) as pool:
-        results = pool.map(pdf_to_text_with_structure, pdf_files)
+        results = pool.starmap(pdf_to_text_with_structure, args_list)
 
     # Write the results to CSV
     for df, _ in results:
@@ -65,6 +68,6 @@ def process_folder(pdf_folder_path, headers, output_file_path):
             else:
                 df.to_csv(output_file_path, index=False, sep="|")
                 file_exists = True
-
+                
 # Call the function
 process_folder(pdf_folder_path, headers, output_file_path)
