@@ -15,10 +15,10 @@ from PIL import Image
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Update with your path
 
 # Example usage
-pdf_folder_path = 'C:/Users/ene/Documents/Pitchbook Project/Test/Batch1' # Update with your path
+pdf_folder_path = "C:/Users/ENeue/OCR Tryout/Batch1" # Update with your path
 
 # Specify your desired file path
-output_file_path = 'C:/Users/ene/Documents/Pitchbook Project/Test/Batch1'
+output_file_path = "C:/Users/ENeue/OCR Tryout/Batch1"
 
 # Iterate through all PDFs
 def process_folder(pdf_folder_path, headers, output_file_path):
@@ -56,7 +56,7 @@ def process_folder(pdf_folder_path, headers, output_file_path):
     args_list = [(pdf_file, headers) for pdf_file in pdf_files]
 
     # Use a process pool to parallelize the work, using one core less than available
-    num_processes = max(1, cpu_count() - 1)
+    num_processes = max(1, cpu_count() - 6)
     with Pool(num_processes) as pool:
         results = pool.starmap(pdf_to_text_with_structure, args_list)
 
